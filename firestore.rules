@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // وصول مفتوح (بدون تسجيل دخول) لمستند خطة لازم التشغيلية فقط.
+    // أي شخص يملك رابط الموقع يقدر يقرأ ويعدّل هذا المستند تحديداً.
+    match /lazemOperationalPlan/{docId} {
+      allow read, write: if true;
+    }
+    // كل شي غير هذا المسار مرفوض افتراضياً.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
