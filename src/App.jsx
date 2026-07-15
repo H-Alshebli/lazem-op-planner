@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, PLAN_DOC_PATH } from './firebase'
 import { defaultState } from './utils/calc'
+import lazemLogo from './assets/lazem-logo-white.svg'
 import Dashboard from './components/Dashboard'
 import PlanTab from './components/PlanTab'
 import VisionTab from './components/VisionTab'
@@ -84,7 +85,7 @@ export default function App() {
     <>
       <header>
         <div className="brand">
-          <span className="logo">LAZEM</span>
+          <img src={lazemLogo} alt="لازم" className="logo" />
           <div>
             <h1>نظام إدارة الخطة التشغيلية</h1>
             <div className="sub">التخطيط التشغيلي 2026</div>
