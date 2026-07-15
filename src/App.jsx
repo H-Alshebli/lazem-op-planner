@@ -29,6 +29,7 @@ export default function App() {
   const [ready, setReady] = useState(false)
   const saveTimer = useRef(null)
   const skipNextSnapshot = useRef(false)
+  const isRemoteUpdate = useRef(false)
 
   // الاشتراك اللحظي في وثيقة الخطة على Firestore
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function App() {
           setReady(true)
           return
         }
+        isRemoteUpdate.current = true
         if (snap.exists() && snap.data().data) {
           setState(snap.data().data)
         } else {
@@ -59,8 +61,13 @@ export default function App() {
   }, [])
 
   // حفظ أي تعديل محلي إلى Firestore (بعد تأخير بسيط لتقليل عدد الكتابات)
+  // يتجاهل التحديثات القادمة من Firestore نفسه (تحميل أولي أو تعديل من جهاز آخر) حتى لا يعيد حفظها من جديد
   useEffect(() => {
     if (!ready || state === null) return
+    if (isRemoteUpdate.current) {
+      isRemoteUpdate.current = false
+      return
+    }
     setSaving(true)
     clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
