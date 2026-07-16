@@ -3,7 +3,16 @@ import { newKpi, newMainTask } from '../utils/calc'
 import KpiCard from './KpiCard'
 import MainTaskCard from './MainTaskCard'
 
-export default function VisionTab({ vision, setVision, kpis, setKpis, mainTasks, setMainTasks }) {
+export default function VisionTab({
+  vision,
+  setVision,
+  kpis,
+  setKpis,
+  mainTasks,
+  setMainTasks,
+  strategicLinks,
+  setStrategicLinks,
+}) {
   const [justAddedId, setJustAddedId] = useState(null)
 
   const financialKpis = kpis.filter((k) => k.type === 'financial')
@@ -11,6 +20,9 @@ export default function VisionTab({ vision, setVision, kpis, setKpis, mainTasks,
 
   const updateKpi = (id, patch) => {
     setKpis(kpis.map((k) => (k.id === id ? patch : k)))
+  }
+  const addStrategicLink = (text) => {
+    if (!strategicLinks.includes(text)) setStrategicLinks([...strategicLinks, text])
   }
   const removeKpi = (id) => {
     if (!confirm('حذف هذا المؤشر؟')) return
@@ -72,6 +84,8 @@ export default function VisionTab({ vision, setVision, kpis, setKpis, mainTasks,
             kpi={kpi}
             onChange={(patch) => updateKpi(kpi.id, patch)}
             onDelete={() => removeKpi(kpi.id)}
+            strategicLinks={strategicLinks}
+            onAddStrategicLink={addStrategicLink}
             defaultOpen={kpi.id === justAddedId}
           />
         ))}
@@ -96,6 +110,8 @@ export default function VisionTab({ vision, setVision, kpis, setKpis, mainTasks,
             onChange={(patch) => updateKpi(kpi.id, patch)}
             onDelete={() => removeKpi(kpi.id)}
             financialKpis={financialKpis}
+            strategicLinks={strategicLinks}
+            onAddStrategicLink={addStrategicLink}
             defaultOpen={kpi.id === justAddedId}
           />
         ))}

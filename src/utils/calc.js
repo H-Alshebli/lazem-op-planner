@@ -103,7 +103,15 @@ export function normalizeOperationalPlanState(rawState) {
     return r.value
   })
 
-  return { state: { ...rawState, kpis, mainTasks }, changed }
+  // قائمة الأهداف/التوجهات الاستراتيجية المشتركة تُبنى من أي قيم strategicLink
+  // سبق إدخالها يدوياً في المؤشرات، بالإضافة لأي قائمة محفوظة مسبقاً
+  const existingLinks = Array.isArray(rawState.strategicLinks) ? rawState.strategicLinks : []
+  if (!Array.isArray(rawState.strategicLinks)) changed = true
+  const derivedLinks = kpis.map((k) => k.strategicLink).filter(Boolean)
+  const strategicLinks = Array.from(new Set([...existingLinks, ...derivedLinks]))
+  if (strategicLinks.length !== existingLinks.length) changed = true
+
+  return { state: { ...rawState, kpis, mainTasks, strategicLinks }, changed }
 }
 
 export function defaultState() {
@@ -119,6 +127,7 @@ export function defaultState() {
     vision: '',
     kpis: [],
     mainTasks: [],
+    strategicLinks: [],
     swot: {
       strengths: [],
       weaknesses: [],

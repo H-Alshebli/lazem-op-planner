@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import CollapsibleCard from './CollapsibleCard'
 import DynamicPointsList from './DynamicPointsList'
 
@@ -37,11 +38,44 @@ const NONFINANCIAL_STATUS_OPTIONS = [
   { value: 'rejected', label: 'مستبعد' },
 ]
 
-export default function KpiCard({ kpi, onChange, onDelete, financialKpis = [], defaultOpen }) {
+const ADD_NEW_VALUE = '__add_new__'
+
+export default function KpiCard({
+  kpi,
+  onChange,
+  onDelete,
+  financialKpis = [],
+  strategicLinks = [],
+  onAddStrategicLink,
+  defaultOpen,
+}) {
   const isFinancial = kpi.type === 'financial'
   const set = (patch) => onChange({ ...kpi, ...patch })
   const statusOptions = isFinancial ? FINANCIAL_STATUS_OPTIONS : NONFINANCIAL_STATUS_OPTIONS
   const statusLabel = statusOptions.find((s) => s.value === kpi.status)?.label
+
+  const [addingLink, setAddingLink] = useState(false)
+  const [newLinkText, setNewLinkText] = useState('')
+
+  const handleStrategicLinkChange = (value) => {
+    if (value === ADD_NEW_VALUE) {
+      setNewLinkText('')
+      setAddingLink(true)
+      return
+    }
+    set({ strategicLink: value })
+  }
+  const confirmNewLink = () => {
+    const text = newLinkText.trim()
+    if (!text) {
+      setAddingLink(false)
+      return
+    }
+    if (!strategicLinks.includes(text)) onAddStrategicLink?.(text)
+    set({ strategicLink: text })
+    setAddingLink(false)
+    setNewLinkText('')
+  }
 
   return (
     <CollapsibleCard
@@ -72,7 +106,44 @@ export default function KpiCard({ kpi, onChange, onDelete, financialKpis = [], d
 
         <div className="field">
           <label>{isFinancial ? 'الهدف الاستراتيجي أو التوجه المرتبط به' : 'الهدف أو التوجه الاستراتيجي الذي يخدمه'}</label>
-          <input type="text" value={kpi.strategicLink} onChange={(e) => set({ strategicLink: e.target.value })} />
+          {addingLink ? (
+            <div className="row-item">
+              <input
+                type="text"
+                autoFocus
+                placeholder="اكتب الهدف أو التوجه الاستراتيجي الجديد..."
+                value={newLinkText}
+                onChange={(e) => setNewLinkText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    confirmNewLink()
+                  }
+                }}
+              />
+              <button type="button" className="add-btn" onClick={confirmNewLink}>إضافة</button>
+              <button
+                type="button"
+                className="icon-btn"
+                onClick={() => {
+                  setAddingLink(false)
+                  setNewLinkText('')
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <select value={kpi.strategicLink} onChange={(e) => handleStrategicLinkChange(e.target.value)}>
+              <option value="">اختر هدفاً أو توجهاً استراتيجياً</option>
+              {[...strategicLinks, kpi.strategicLink]
+                .filter((v, i, arr) => v && arr.indexOf(v) === i)
+                .map((link) => (
+                  <option key={link} value={link}>{link}</option>
+                ))}
+              <option value={ADD_NEW_VALUE}>+ إضافة هدف أو توجه استراتيجي جديد...</option>
+            </select>
+          )}
         </div>
 
         {!isFinancial && (
@@ -123,14 +194,22 @@ export default function KpiCard({ kpi, onChange, onDelete, financialKpis = [], d
           </div>
         )}
 
-        <div className="field">
+        <div className="field field-span2">
           <label>وصف مختصر للمؤشر</label>
-          <input type="text" value={kpi.description} onChange={(e) => set({ description: e.target.value })} />
+          <textarea
+            style={{ minHeight: 90 }}
+            value={kpi.description}
+            onChange={(e) => set({ description: e.target.value })}
+          />
         </div>
 
-        <div className="field">
+        <div className="field field-span2">
           <label>طريقة القياس أو المعادلة الأولية</label>
-          <input type="text" value={kpi.measurementMethod} onChange={(e) => set({ measurementMethod: e.target.value })} />
+          <textarea
+            style={{ minHeight: 90 }}
+            value={kpi.measurementMethod}
+            onChange={(e) => set({ measurementMethod: e.target.value })}
+          />
         </div>
 
         <div className="field">

@@ -137,6 +137,8 @@ export default function App() {
             setKpis={(kpis) => setState({ ...state, kpis })}
             mainTasks={state.mainTasks}
             setMainTasks={(mainTasks) => setState({ ...state, mainTasks })}
+            strategicLinks={state.strategicLinks}
+            setStrategicLinks={(strategicLinks) => setState({ ...state, strategicLinks })}
           />
         )}
 
