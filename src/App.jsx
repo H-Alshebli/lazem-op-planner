@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, PLAN_DOC_PATH } from './firebase'
-import { defaultState } from './utils/calc'
+import { defaultState, normalizeOperationalPlanState } from './utils/calc'
 import lazemLogo from './assets/lazem-logo-white.svg'
 import Dashboard from './components/Dashboard'
 import PlanTab from './components/PlanTab'
@@ -41,10 +41,16 @@ export default function App() {
           setReady(true)
           return
         }
-        isRemoteUpdate.current = true
         if (snap.exists() && snap.data().data) {
-          setState(snap.data().data)
+          // نحوّل الهياكل القديمة لـ kpis/mainTasks (arrays of strings) إلى الهيكل الجديد
+          // بدون فقدان بيانات الأقسام الأخرى. إن لم يحصل ترحيل فعلي، نتعامل مع
+          // التحديث كتحديث قادم من السيرفر فقط (لا نعيد حفظه). إن حصل ترحيل، نترك
+          // آلية الحفظ التلقائي تحفظه كأنه تعديل محلي حتى تُخزَّن البيانات المُرحَّلة.
+          const { state: normalized, changed } = normalizeOperationalPlanState(snap.data().data)
+          isRemoteUpdate.current = !changed
+          setState(normalized)
         } else {
+          isRemoteUpdate.current = true
           const seed = defaultState()
           setState(seed)
           setDoc(docRef, { data: seed, updatedAt: serverTimestamp() })
