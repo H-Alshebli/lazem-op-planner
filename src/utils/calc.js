@@ -109,48 +109,23 @@ export function normalizeOperationalPlanState(rawState) {
 export function defaultState() {
   return {
     plan: {
-      dept: 'إدارة تقنية المعلومات والتحول الرقمي',
-      start: '2026-06-17',
-      end: '2026-12-31',
-      duration: 6,
-      team: [
-        { role: 'المسؤول عن الخطة', name: 'حمدان الشبلي' },
-        { role: 'عضو فريق التخطيط', name: 'سلمان الدرويش' },
-      ],
-      approvals: [{ name: 'د. معاذ', signature: '' }],
+      dept: '',
+      start: '',
+      end: '',
+      duration: 0,
+      team: [],
+      approvals: [],
     },
-    vision:
-      'أن نكون المجموعة السعودية الرائدة في قطاع السلامة والصحة المهنية عبر تقديم حلول شمولية مبتكرة قابلة للتطبيق في مختلف القطاعات وتناسب جميع الفئات.',
-    kpis: [{ ...newKpi('financial'), title: 'زيادة المبيعات' }],
-    mainTasks: [
-      { ...newMainTask('main'), title: 'تشغيل الشبكات الداخلية والحفاظ على استمراريتها' },
-      { ...newMainTask('main'), title: 'الاشتراك في الأنظمة الرقمية والحفاظ على استمراريتها' },
-      { ...newMainTask('main'), title: 'شراء الأجهزة التقنية والحفاظ على استمراريتها' },
-      { ...newMainTask('main'), title: 'بناء تطبيقات تقنية والحفاظ على استمراريتها' },
-    ],
+    vision: '',
+    kpis: [],
+    mainTasks: [],
     swot: {
-      strengths: ['عندنا أفكار عظيمة', 'إيمان الإدارة العليا بإدارتنا'],
-      weaknesses: [
-        'ميزانية منخفضة',
-        'فريق محدود',
-        'قلة خبرة بالموظفين الحاليين',
-        'عدم وجود خطة للإدارة',
-      ],
-      opportunities: [
-        'إمكانية توظيف موظف جديد',
-        'إمكانية تحويل الأنظمة إلى منتجات بيع',
-        'إمكانية إدراج الذكاء الاصطناعي في تسهيل العمل',
-      ],
-      threats: ['احتمال توقف الأنظمة أو خسارة البيانات'],
+      strengths: [],
+      weaknesses: [],
+      opportunities: [],
+      threats: [],
     },
-    objectives: [
-      { id: uid(), title: 'أتمتة العمليات', tasks: [] },
-      { id: uid(), title: 'بناء أنظمة رقمية', tasks: [] },
-      { id: uid(), title: 'زيادة الموظفين', tasks: [] },
-      { id: uid(), title: 'تحويل الأنظمة إلى منتجات بيع', tasks: [] },
-      { id: uid(), title: 'الحفاظ على آلية النظام وعمل باك أب لقواعد البيانات', tasks: [] },
-      { id: uid(), title: 'وضع خطة للإدارة', tasks: [] },
-    ],
+    objectives: [],
     policies: '',
   }
 }
