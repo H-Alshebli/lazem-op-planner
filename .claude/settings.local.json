@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node \"C:\\\\Users\\\\HAMDAN~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-HamdanAlshebli-Downloads-lazem-op-planner-lazem-planner\\\\48cce5fa-3c96-44a9-bb91-7c12225702a6\\\\scratchpad\\\\urgent_read.js\")",
+      "Bash(node \"C:\\\\Users\\\\HAMDAN~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-HamdanAlshebli-Downloads-lazem-op-planner-lazem-planner\\\\48cce5fa-3c96-44a9-bb91-7c12225702a6\\\\scratchpad\\\\cleanup3.js\")",
+      "Bash(rm -f \"C:\\\\Users\\\\HAMDAN~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-HamdanAlshebli-Downloads-lazem-op-planner-lazem-planner\\\\48cce5fa-3c96-44a9-bb91-7c12225702a6\\\\scratchpad\"/*.js \"C:\\\\Users\\\\HAMDAN~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-HamdanAlshebli-Downloads-lazem-op-planner-lazem-planner\\\\48cce5fa-3c96-44a9-bb91-7c12225702a6\\\\scratchpad\"/*.png)"
+    ]
+  }
+}

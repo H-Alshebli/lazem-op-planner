@@ -6,22 +6,38 @@ export function uid() {
 export function newKpi(type = 'financial') {
   return {
     id: uid(),
-    title: '',
     type, // 'financial' | 'nonFinancial'
-    strategicLink: '',
+
+    title: '',
+    strategicObjective: '',
     description: '',
+
+    measurementMethod: '',
+    measurementUnit: '',
+    baselineValue: '',
+    targetValue: '',
+    targetPeriod: '',
+    improvementDirection: '',
+
+    dataSource: '',
+    measurementFrequency: '',
+    owner: '',
+
+    indicatorSource: '',
+    selectionRationale: '',
+    status: 'draft',
+
+    brainstormItems: [],
+    committeeNotes: '',
+
+    // خاصة بالمؤشر المالي فقط
+    financialReference: '',
+    financialLineItem: '',
+
+    // خاصة بالمؤشر غير المالي فقط
     category: '',
     linkedFinancialKpiId: '',
     relationshipType: '',
-    measurementMethod: '',
-    measurementUnit: '',
-    dataSource: '',
-    frequency: '',
-    reason: '',
-    source: '',
-    status: type === 'nonFinancial' ? 'proposed' : 'draft',
-    brainstormPoints: [],
-    notes: '',
   }
 }
 
@@ -48,6 +64,25 @@ function migrateLegacyKpi(title) {
   return { ...newKpi('financial'), title, status: '' }
 }
 
+// إعادة تسمية بعض قيم تصنيف المؤشر القديمة إلى الأسماء الجديدة حتى تبقى ظاهرة في القائمة المنسدلة
+const CATEGORY_RENAME_MAP = {
+  'العملاء والمستفيدون': 'العملاء والسوق',
+  'التعلم وتطوير الموظفين': 'الموظفون والتعلم',
+}
+
+// يحوّل نقاط العصف الذهني القديمة (string[] أو objects ناقصة) إلى الهيكل الجديد {id, type, text}
+function migrateBrainstormItems(item) {
+  const raw = Array.isArray(item.brainstormItems)
+    ? item.brainstormItems
+    : Array.isArray(item.brainstormPoints)
+      ? item.brainstormPoints
+      : []
+  return raw.map((p) => {
+    if (typeof p === 'string') return { id: uid(), type: 'idea', text: p }
+    return { id: p.id || uid(), type: p.type || 'idea', text: p.text || '' }
+  })
+}
+
 // تحويل مهمة قديمة (نص فقط) إلى الهيكل الجديد، بحقول جديدة فارغة كما هو مطلوب في الترحيل
 function migrateLegacyMainTask(title) {
   return { ...newMainTask('main'), title, status: '' }
@@ -59,9 +94,36 @@ function normalizeKpiItem(item) {
   }
   const type = item.type === 'nonFinancial' ? 'nonFinancial' : 'financial'
   const base = newKpi(type)
-  const value = { ...base, ...item, id: item.id || uid() }
-  value.brainstormPoints = Array.isArray(item.brainstormPoints) ? item.brainstormPoints : []
-  const changed = !item.id || !item.type
+  const value = { ...base, ...item, id: item.id || uid(), type }
+
+  // ترحيل الحقول من الأسماء القديمة (جيل سابق من هذه الصفحة) إلى الأسماء الجديدة،
+  // بدون الكتابة فوق قيمة جديدة موجودة أصلاً
+  if (!value.strategicObjective && item.strategicLink) value.strategicObjective = item.strategicLink
+  if (!value.committeeNotes && item.notes) value.committeeNotes = item.notes
+  if (!value.measurementFrequency && item.frequency) value.measurementFrequency = item.frequency
+  if (!value.selectionRationale && item.reason) value.selectionRationale = item.reason
+  if (!value.indicatorSource && item.source) value.indicatorSource = item.source
+  if (CATEGORY_RENAME_MAP[value.category]) value.category = CATEGORY_RENAME_MAP[value.category]
+
+  value.brainstormItems = migrateBrainstormItems(item)
+  delete value.brainstormPoints
+  delete value.strategicLink
+  delete value.notes
+  delete value.frequency
+  delete value.reason
+  delete value.source
+
+  const oldKeys = ['strategicLink', 'notes', 'frequency', 'reason', 'source', 'brainstormPoints']
+  const newKeys = [
+    'strategicObjective', 'committeeNotes', 'measurementFrequency', 'selectionRationale',
+    'indicatorSource', 'brainstormItems', 'baselineValue', 'targetValue', 'targetPeriod',
+    'improvementDirection', 'owner', 'financialReference', 'financialLineItem',
+  ]
+  const changed =
+    !item.id ||
+    !item.type ||
+    oldKeys.some((k) => k in item) ||
+    newKeys.some((k) => !(k in item))
   return { changed, value }
 }
 
@@ -103,11 +165,11 @@ export function normalizeOperationalPlanState(rawState) {
     return r.value
   })
 
-  // قائمة الأهداف/التوجهات الاستراتيجية المشتركة تُبنى من أي قيم strategicLink
+  // قائمة الأهداف/التوجهات الاستراتيجية المشتركة تُبنى من أي قيم strategicObjective
   // سبق إدخالها يدوياً في المؤشرات، بالإضافة لأي قائمة محفوظة مسبقاً
   const existingLinks = Array.isArray(rawState.strategicLinks) ? rawState.strategicLinks : []
   if (!Array.isArray(rawState.strategicLinks)) changed = true
-  const derivedLinks = kpis.map((k) => k.strategicLink).filter(Boolean)
+  const derivedLinks = kpis.map((k) => k.strategicObjective).filter(Boolean)
   const strategicLinks = Array.from(new Set([...existingLinks, ...derivedLinks]))
   if (strategicLinks.length !== existingLinks.length) changed = true
 
