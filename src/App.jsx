@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, PLAN_DOC_PATH } from './firebase'
-import { defaultState, normalizeOperationalPlanState } from './utils/calc'
+import { defaultState, normalizeOperationalPlanState, uid } from './utils/calc'
 import lazemLogo from './assets/lazem-logo-white.svg'
 import Dashboard from './components/Dashboard'
 import PlanTab from './components/PlanTab'
@@ -28,7 +28,11 @@ export default function App() {
   const [saving, setSaving] = useState(false)
   const [ready, setReady] = useState(false)
   const saveTimer = useRef(null)
-  const skipNextSnapshot = useRef(false)
+  // معرّفات كتابات محلية لا تزال بانتظار "صداها" من Firestore. نستخدم مجموعة
+  // (Set) بدل علامة واحدة (boolean) لأن أكثر من كتابة محلية قد تكون معلّقة
+  // بنفس الوقت (مثلاً تعديل حقل ثم حذف بطاقة بسرعة) — علامة واحدة تفقد
+  // تتبّع الكتابات الإضافية وتؤدي لتراجع تعديلات حديثة (كحذف لا "يثبت").
+  const pendingWriteIds = useRef(new Set())
   const isRemoteUpdate = useRef(false)
 
   // الاشتراك اللحظي في وثيقة الخطة على Firestore
@@ -36,8 +40,10 @@ export default function App() {
     const unsub = onSnapshot(
       docRef,
       (snap) => {
-        if (skipNextSnapshot.current) {
-          skipNextSnapshot.current = false
+        const incomingWriteId = snap.data()?.writeId
+        if (incomingWriteId && pendingWriteIds.current.has(incomingWriteId)) {
+          // هذا صدى كتابة محلية سبق أن أرسلناها لهذا الجهاز تحديداً — تجاهله
+          pendingWriteIds.current.delete(incomingWriteId)
           setReady(true)
           return
         }
@@ -53,7 +59,9 @@ export default function App() {
           isRemoteUpdate.current = true
           const seed = defaultState()
           setState(seed)
-          setDoc(docRef, { data: seed, updatedAt: serverTimestamp() })
+          const writeId = uid()
+          pendingWriteIds.current.add(writeId)
+          setDoc(docRef, { data: seed, writeId, updatedAt: serverTimestamp() })
         }
         setReady(true)
       },
@@ -77,11 +85,13 @@ export default function App() {
     setSaving(true)
     clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
+      const writeId = uid()
       try {
-        skipNextSnapshot.current = true
-        await setDoc(docRef, { data: state, updatedAt: serverTimestamp() })
+        pendingWriteIds.current.add(writeId)
+        await setDoc(docRef, { data: state, writeId, updatedAt: serverTimestamp() })
       } catch (e) {
         console.error('Save failed:', e)
+        pendingWriteIds.current.delete(writeId)
       } finally {
         setSaving(false)
       }
