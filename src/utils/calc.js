@@ -2,11 +2,24 @@ export function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
 }
 
-// إنشاء مؤشر أداء جديد (مالي أو غير مالي) بالحقول الكاملة لصفحة الرؤية والمؤشرات
-export function newKpi(type = 'financial') {
+// المحاور الخمسة التي تُصنَّف عليها مؤشرات الأداء في صفحة الرؤية والمؤشرات
+export const KPI_AXES = [
+  { key: 'products', label: 'محور المنتجات والخدمات' },
+  { key: 'hr', label: 'محور الموارد البشرية والهيكل' },
+  { key: 'financial', label: 'محور المالي' },
+  { key: 'tech', label: 'محور التقنية' },
+  { key: 'customers', label: 'محور العملاء والأسواق' },
+]
+
+export function axisLabel(key) {
+  return KPI_AXES.find((a) => a.key === key)?.label || key
+}
+
+// إنشاء مؤشر أداء جديد ضمن أحد المحاور الخمسة، بالحقول الكاملة لصفحة الرؤية والمؤشرات
+export function newKpi(axis = 'products') {
   return {
     id: uid(),
-    type, // 'financial' | 'nonFinancial'
+    axis, // 'products' | 'hr' | 'financial' | 'tech' | 'customers'
 
     title: '',
     strategicObjective: '',
@@ -30,12 +43,11 @@ export function newKpi(type = 'financial') {
     brainstormItems: [],
     committeeNotes: '',
 
-    // خاصة بالمؤشر المالي فقط
+    // خاصة بمحور المالي فقط
     financialReference: '',
     financialLineItem: '',
 
-    // خاصة بالمؤشر غير المالي فقط
-    category: '',
+    // خاصة بالمحاور الأربعة الأخرى فقط (ربطها بمؤشر من محور المالي)
     linkedFinancialKpiId: '',
     relationshipType: '',
   }
@@ -64,10 +76,28 @@ function migrateLegacyKpi(title) {
   return { ...newKpi('financial'), title, status: '' }
 }
 
-// إعادة تسمية بعض قيم تصنيف المؤشر القديمة إلى الأسماء الجديدة حتى تبقى ظاهرة في القائمة المنسدلة
-const CATEGORY_RENAME_MAP = {
-  'العملاء والمستفيدون': 'العملاء والسوق',
-  'التعلم وتطوير الموظفين': 'الموظفون والتعلم',
+const KPI_AXIS_KEYS = ['products', 'hr', 'financial', 'tech', 'customers']
+
+// خريطة تحويل تصنيف المؤشر القديم (وحقل type القديم) إلى المحور الجديد الأقرب له
+const CATEGORY_TO_AXIS = {
+  'العملاء والسوق': 'customers',
+  'العملاء والمستفيدون': 'customers',
+  'العمليات الداخلية': 'products',
+  'الجودة والامتثال': 'products',
+  'الموظفون والتعلم': 'hr',
+  'التعلم وتطوير الموظفين': 'hr',
+  'التقنية والتحول الرقمي': 'tech',
+  'المخاطر واستمرارية الأعمال': 'products',
+  'أخرى': 'products',
+}
+
+// يشتق المحور المناسب من بيانات مؤشر قديم: يفضّل axis الجديد إن وجد، وإلا يشتقه
+// من type القديم (مالي/غير مالي) وcategory القديمة، وإلا يستخدم "المنتجات والخدمات" كافتراضي آمن
+function deriveAxis(item) {
+  if (item.axis && KPI_AXIS_KEYS.includes(item.axis)) return item.axis
+  if (item.type === 'financial') return 'financial'
+  if (item.category && CATEGORY_TO_AXIS[item.category]) return CATEGORY_TO_AXIS[item.category]
+  return 'products'
 }
 
 // يحوّل نقاط العصف الذهني القديمة (string[] أو objects ناقصة) إلى الهيكل الجديد {id, type, text}
@@ -92,18 +122,17 @@ function normalizeKpiItem(item) {
   if (typeof item === 'string') {
     return { changed: true, value: migrateLegacyKpi(item) }
   }
-  const type = item.type === 'nonFinancial' ? 'nonFinancial' : 'financial'
-  const base = newKpi(type)
-  const value = { ...base, ...item, id: item.id || uid(), type }
+  const axis = deriveAxis(item)
+  const base = newKpi(axis)
+  const value = { ...base, ...item, id: item.id || uid(), axis }
 
-  // ترحيل الحقول من الأسماء القديمة (جيل سابق من هذه الصفحة) إلى الأسماء الجديدة،
+  // ترحيل الحقول من الأسماء القديمة (أجيال سابقة من هذه الصفحة) إلى الأسماء الجديدة،
   // بدون الكتابة فوق قيمة جديدة موجودة أصلاً
   if (!value.strategicObjective && item.strategicLink) value.strategicObjective = item.strategicLink
   if (!value.committeeNotes && item.notes) value.committeeNotes = item.notes
   if (!value.measurementFrequency && item.frequency) value.measurementFrequency = item.frequency
   if (!value.selectionRationale && item.reason) value.selectionRationale = item.reason
   if (!value.indicatorSource && item.source) value.indicatorSource = item.source
-  if (CATEGORY_RENAME_MAP[value.category]) value.category = CATEGORY_RENAME_MAP[value.category]
 
   value.brainstormItems = migrateBrainstormItems(item)
   delete value.brainstormPoints
@@ -112,16 +141,17 @@ function normalizeKpiItem(item) {
   delete value.frequency
   delete value.reason
   delete value.source
+  delete value.type
+  delete value.category
 
-  const oldKeys = ['strategicLink', 'notes', 'frequency', 'reason', 'source', 'brainstormPoints']
+  const oldKeys = ['type', 'category', 'strategicLink', 'notes', 'frequency', 'reason', 'source', 'brainstormPoints']
   const newKeys = [
-    'strategicObjective', 'committeeNotes', 'measurementFrequency', 'selectionRationale',
+    'axis', 'strategicObjective', 'committeeNotes', 'measurementFrequency', 'selectionRationale',
     'indicatorSource', 'brainstormItems', 'baselineValue', 'targetValue', 'targetPeriod',
     'improvementDirection', 'owner', 'financialReference', 'financialLineItem',
   ]
   const changed =
     !item.id ||
-    !item.type ||
     oldKeys.some((k) => k in item) ||
     newKeys.some((k) => !(k in item))
   return { changed, value }

@@ -123,7 +123,7 @@ export default function App() {
       </nav>
 
       <main>
-        {activeTab === 'dashboard' && <Dashboard objectives={state.objectives} />}
+        {activeTab === 'dashboard' && <Dashboard objectives={state.objectives} kpis={state.kpis} />}
 
         {activeTab === 'plan' && (
           <PlanTab plan={state.plan} setPlan={(plan) => setState({ ...state, plan })} />

@@ -1,7 +1,15 @@
 import { useState } from 'react'
-import { newKpi, newMainTask } from '../utils/calc'
+import { newKpi, newMainTask, KPI_AXES } from '../utils/calc'
 import KpiCard from './KpiCard'
 import MainTaskCard from './MainTaskCard'
+
+const AXIS_HELP = {
+  products: 'مؤشرات تقيس أداء المنتجات والخدمات المقدَّمة، وجودتها، وكفاءة تقديمها.',
+  hr: 'مؤشرات تقيس كفاءة الفريق المسؤول عن هذه العملية، وتطويره، واستقراره.',
+  financial: 'مؤشرات الأداء المالية المعتمدة والواردة من الخطة الاستراتيجية أو من الإدارة العليا.',
+  tech: 'مؤشرات مرتبطة بكفاءة الأنظمة والبنية التقنية وجاهزيتها واستمراريتها.',
+  customers: 'مؤشرات تقيس رضا العملاء، وحصة السوق، ونمو قاعدة العملاء.',
+}
 
 export default function VisionTab({
   vision,
@@ -15,8 +23,7 @@ export default function VisionTab({
 }) {
   const [justAddedId, setJustAddedId] = useState(null)
 
-  const financialKpis = kpis.filter((k) => k.type === 'financial')
-  const nonFinancialKpis = kpis.filter((k) => k.type === 'nonFinancial')
+  const financialKpis = kpis.filter((k) => k.axis === 'financial')
 
   const updateKpi = (id, patch) => {
     setKpis(kpis.map((k) => (k.id === id ? patch : k)))
@@ -32,8 +39,8 @@ export default function VisionTab({
         .map((k) => (k.linkedFinancialKpiId === id ? { ...k, linkedFinancialKpiId: '' } : k))
     )
   }
-  const addKpi = (type) => {
-    const kpi = newKpi(type)
+  const addKpi = (axis) => {
+    const kpi = newKpi(axis)
     setKpis([...kpis, kpi])
     setJustAddedId(kpi.id)
   }
@@ -70,56 +77,33 @@ export default function VisionTab({
         />
       </div>
 
-      <div className="card indicators-section">
-        <h2>مؤشرات الأداء المالية الواردة من الخطة الاستراتيجية</h2>
-        <p className="section-help">
-          تُسجل هنا مؤشرات الأداء المالية المعتمدة والواردة من الخطة الاستراتيجية أو من الإدارة العليا، ثم
-          تُستخدم كمرجعية لاستنباط مؤشرات وأهداف تشغيلية مساندة.
-        </p>
+      {KPI_AXES.map((axis) => {
+        const axisKpis = kpis.filter((k) => k.axis === axis.key)
+        return (
+          <div className="card indicators-section" key={axis.key}>
+            <h2>{axis.label}</h2>
+            <p className="section-help">{AXIS_HELP[axis.key]}</p>
 
-        {financialKpis.length === 0 && <div className="empty-note">لا توجد مؤشرات مالية بعد.</div>}
-        {financialKpis.map((kpi) => (
-          <KpiCard
-            key={kpi.id}
-            kpi={kpi}
-            onChange={(patch) => updateKpi(kpi.id, patch)}
-            onDelete={() => removeKpi(kpi.id)}
-            strategicLinks={strategicLinks}
-            onAddStrategicLink={addStrategicLink}
-            defaultOpen={kpi.id === justAddedId}
-          />
-        ))}
+            {axisKpis.length === 0 && <div className="empty-note">لا توجد مؤشرات في هذا المحور بعد.</div>}
+            {axisKpis.map((kpi) => (
+              <KpiCard
+                key={kpi.id}
+                kpi={kpi}
+                onChange={(patch) => updateKpi(kpi.id, patch)}
+                onDelete={() => removeKpi(kpi.id)}
+                financialKpis={financialKpis}
+                strategicLinks={strategicLinks}
+                onAddStrategicLink={addStrategicLink}
+                defaultOpen={kpi.id === justAddedId}
+              />
+            ))}
 
-        <button type="button" className="primary-btn" onClick={() => addKpi('financial')}>
-          + إضافة مؤشر مالي
-        </button>
-      </div>
-
-      <div className="card indicators-section">
-        <h2>مؤشرات الأداء غير المالية المستنبطة</h2>
-        <p className="section-help">
-          تُقترح هنا مؤشرات غير مالية تساعد على تحسين العملاء والعمليات والجودة والموظفين والتقنية
-          والمخاطر، وقد تساهم بصورة مباشرة أو غير مباشرة في تحقيق النتائج المالية والاستراتيجية.
-        </p>
-
-        {nonFinancialKpis.length === 0 && <div className="empty-note">لا توجد مؤشرات غير مالية بعد.</div>}
-        {nonFinancialKpis.map((kpi) => (
-          <KpiCard
-            key={kpi.id}
-            kpi={kpi}
-            onChange={(patch) => updateKpi(kpi.id, patch)}
-            onDelete={() => removeKpi(kpi.id)}
-            financialKpis={financialKpis}
-            strategicLinks={strategicLinks}
-            onAddStrategicLink={addStrategicLink}
-            defaultOpen={kpi.id === justAddedId}
-          />
-        ))}
-
-        <button type="button" className="primary-btn" onClick={() => addKpi('nonFinancial')}>
-          + إضافة مؤشر غير مالي
-        </button>
-      </div>
+            <button type="button" className="primary-btn" onClick={() => addKpi(axis.key)}>
+              + إضافة مؤشر في {axis.label}
+            </button>
+          </div>
+        )
+      })}
 
       <div className="card">
         <h2><span className="n">3</span> المهام الرئيسية / الروتينية</h2>

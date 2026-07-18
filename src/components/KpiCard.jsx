@@ -1,16 +1,7 @@
 import { useState } from 'react'
 import CollapsibleCard from './CollapsibleCard'
 import BrainstormItemsList from './BrainstormItemsList'
-
-const CATEGORY_OPTIONS = [
-  'العملاء والسوق',
-  'العمليات الداخلية',
-  'الجودة والامتثال',
-  'الموظفون والتعلم',
-  'التقنية والتحول الرقمي',
-  'المخاطر واستمرارية الأعمال',
-  'أخرى',
-]
+import { axisLabel } from '../utils/calc'
 
 const UNIT_OPTIONS = ['ريال سعودي', 'نسبة مئوية', 'عدد', 'يوم', 'ساعة', 'معدل', 'درجة', 'أخرى']
 
@@ -82,7 +73,7 @@ export default function KpiCard({
   onAddStrategicLink,
   defaultOpen,
 }) {
-  const isFinancial = kpi.type === 'financial'
+  const isFinancial = kpi.axis === 'financial'
   const set = (patch) => onChange({ ...kpi, ...patch })
   const statusLabel = STATUS_OPTIONS.find((s) => s.value === kpi.status)?.label
 
@@ -114,13 +105,12 @@ export default function KpiCard({
       defaultOpen={defaultOpen}
       onDelete={onDelete}
       deleteLabel="حذف المؤشر"
-      title={kpi.title || (isFinancial ? 'مؤشر مالي جديد' : 'مؤشر غير مالي جديد')}
+      title={kpi.title || 'مؤشر جديد'}
       badges={
         <>
-          <span className={`indicator-badge ${isFinancial ? 'badge-financial' : 'badge-nonfinancial'}`}>
-            {isFinancial ? 'مالي' : 'غير مالي'}
+          <span className={`indicator-badge axis-badge axis-${kpi.axis}`}>
+            {axisLabel(kpi.axis)}
           </span>
-          {!isFinancial && kpi.category && <span className="indicator-badge badge-category">{kpi.category}</span>}
           {statusLabel && <span className="indicator-badge status-badge">{statusLabel}</span>}
           {kpi.baselineValue && <span className="indicator-badge value-badge">الحالي: {kpi.baselineValue}</span>}
           {kpi.targetValue && <span className="indicator-badge value-badge">المستهدف: {kpi.targetValue}</span>}
@@ -340,18 +330,6 @@ export default function KpiCard({
               <option value="">اختر بنداً</option>
               {FINANCIAL_LINE_ITEM_OPTIONS.map((li) => (
                 <option key={li} value={li}>{li}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {!isFinancial && (
-          <div className="field">
-            <label>تصنيف المؤشر</label>
-            <select value={kpi.category} onChange={(e) => set({ category: e.target.value })}>
-              <option value="">اختر تصنيفاً</option>
-              {CATEGORY_OPTIONS.map((c) => (
-                <option key={c} value={c}>{c}</option>
               ))}
             </select>
           </div>

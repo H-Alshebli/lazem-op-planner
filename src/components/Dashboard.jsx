@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react'
-import { computeObjective, statusLabel, isOverdue } from '../utils/calc'
+import { computeObjective, statusLabel, isOverdue, KPI_AXES } from '../utils/calc'
 
-export default function Dashboard({ objectives }) {
+const KPI_STATUS_LABELS = { draft: 'مسودة', review: 'تحت المراجعة', approved: 'معتمد', rejected: 'مستبعد' }
+const KPI_DIRECTION_LABELS = {
+  increase: '▲ الارتفاع أفضل',
+  decrease: '▼ الانخفاض أفضل',
+  maintain: 'المحافظة ضمن نطاق',
+  unspecified: 'غير محدد',
+}
+
+export default function Dashboard({ objectives, kpis }) {
   const [filterResponsible, setFilterResponsible] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
 
@@ -55,6 +63,61 @@ export default function Dashboard({ objectives }) {
         <div className={`stat ${overdueCount > 0 ? 'danger' : ''}`}>
           <div className="val">{overdueCount}</div><div className="lbl">إجراءات متأخرة</div>
         </div>
+      </div>
+
+      <div className="card">
+        <h2>ملخص مؤشرات الأداء حسب المحور</h2>
+        {kpis.length === 0 ? (
+          <div className="empty-note">لا توجد مؤشرات بعد — أضفها من تبويب "الرؤية والمؤشرات".</div>
+        ) : (
+          KPI_AXES.map((axis) => {
+            const axisKpis = kpis.filter((k) => k.axis === axis.key)
+            const statusCounts = { draft: 0, review: 0, approved: 0, rejected: 0 }
+            axisKpis.forEach((k) => {
+              if (statusCounts[k.status] !== undefined) statusCounts[k.status]++
+            })
+            return (
+              <div className="kpi-axis-summary" key={axis.key}>
+                <div className="kpi-axis-summary-head">
+                  <span className={`indicator-badge axis-badge axis-${axis.key}`}>{axis.label}</span>
+                  <span className="kpi-axis-count">{axisKpis.length} مؤشر</span>
+                  <div className="kpi-axis-status-counts">
+                    <span className="indicator-badge status-badge">مسودة: {statusCounts.draft}</span>
+                    <span className="indicator-badge status-badge">تحت المراجعة: {statusCounts.review}</span>
+                    <span className="indicator-badge status-badge">معتمد: {statusCounts.approved}</span>
+                    <span className="indicator-badge status-badge">مستبعد: {statusCounts.rejected}</span>
+                  </div>
+                </div>
+                {axisKpis.length === 0 ? (
+                  <div className="empty-note">لا توجد مؤشرات في هذا المحور بعد.</div>
+                ) : (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>اسم المؤشر</th>
+                        <th>القيمة الحالية</th>
+                        <th>القيمة المستهدفة</th>
+                        <th>اتجاه التحسن</th>
+                        <th>الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {axisKpis.map((k) => (
+                        <tr key={k.id}>
+                          <td style={{ textAlign: 'right' }}>{k.title || '—'}</td>
+                          <td>{k.baselineValue || '—'}</td>
+                          <td>{k.targetValue || '—'}</td>
+                          <td>{KPI_DIRECTION_LABELS[k.improvementDirection] || '—'}</td>
+                          <td><span className="indicator-badge status-badge">{KPI_STATUS_LABELS[k.status] || '—'}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )
+          })
+        )}
       </div>
 
       <div className="card">

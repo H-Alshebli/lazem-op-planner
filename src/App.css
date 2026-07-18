@@ -128,12 +128,14 @@ td input, td select{padding:6px 8px;font-size:12.5px}
 .indicator-badges{display:flex;gap:6px;flex-wrap:wrap}
 .indicator-badge{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;
   white-space:nowrap;background:var(--blue-gray-light);color:var(--teal)}
-.badge-financial{background:var(--ok-bg);color:var(--ok)}
-.badge-nonfinancial{background:#E7EEF0;color:var(--teal)}
 .badge-main{background:var(--ok-bg);color:var(--ok)}
 .badge-routine{background:var(--warn-bg);color:var(--warn)}
-.badge-category{background:#EFE7F3;color:#6A4A82}
 .status-badge{background:#EEE;color:var(--gray50)}
+.axis-products{background:#E9F3EA;color:#3E7C4A}
+.axis-hr{background:#F3E9F3;color:#7A4A82}
+.axis-financial{background:var(--ok-bg);color:var(--ok)}
+.axis-tech{background:#E7EEF7;color:#2F5FA3}
+.axis-customers{background:var(--warn-bg);color:var(--warn)}
 .card-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
 .toggle-btn{font-size:10px}
 .indicator-body{padding:2px 14px 16px;border-top:1px solid var(--border)}
@@ -154,6 +156,12 @@ td input, td select{padding:6px 8px;font-size:12.5px}
 .dynamic-points-list{margin-bottom:14px}
 .dynamic-point-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
 .dynamic-point-row input{flex:1}
+
+.kpi-axis-summary{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.kpi-axis-summary:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.kpi-axis-summary-head{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
+.kpi-axis-count{font-size:12px;color:var(--gray50);font-weight:600}
+.kpi-axis-status-counts{display:flex;gap:6px;flex-wrap:wrap;margin-inline-start:auto}
 
 @media (max-width:800px){
   .grid2,.grid3,.swot-grid,.stat-row{grid-template-columns:1fr}
