@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import CollapsibleCard from './CollapsibleCard'
 import DynamicPointsList from './DynamicPointsList'
 
@@ -7,15 +8,15 @@ const STATUS_OPTIONS = [
   { value: 'approved', label: 'معتمدة' },
 ]
 
-export default function MainTaskCard({ task, onChange, onDelete, defaultOpen }) {
+function MainTaskCard({ task, onChange, onDelete, defaultOpen }) {
   const isMain = task.taskType === 'main'
-  const set = (patch) => onChange({ ...task, ...patch })
+  const set = (patch) => onChange(task.id, { ...task, ...patch })
   const statusLabel = STATUS_OPTIONS.find((s) => s.value === task.status)?.label
 
   return (
     <CollapsibleCard
       defaultOpen={defaultOpen}
-      onDelete={onDelete}
+      onDelete={() => onDelete(task.id)}
       deleteLabel="حذف المهمة"
       title={task.title || 'مهمة جديدة'}
       badges={
@@ -103,3 +104,5 @@ export default function MainTaskCard({ task, onChange, onDelete, defaultOpen }) 
     </CollapsibleCard>
   )
 }
+
+export default memo(MainTaskCard)

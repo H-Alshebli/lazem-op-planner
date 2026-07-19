@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import CollapsibleCard from './CollapsibleCard'
 import BrainstormItemsList from './BrainstormItemsList'
 import { axisLabel, KPI_QUARTERS, KPI_MONTHS } from '../utils/calc'
@@ -64,7 +64,7 @@ const STATUS_OPTIONS = [
 
 const ADD_NEW_VALUE = '__add_new__'
 
-export default function KpiCard({
+function KpiCard({
   kpi,
   onChange,
   onDelete,
@@ -74,7 +74,7 @@ export default function KpiCard({
   defaultOpen,
 }) {
   const isFinancial = kpi.axis === 'financial'
-  const set = (patch) => onChange({ ...kpi, ...patch })
+  const set = (patch) => onChange(kpi.id, { ...kpi, ...patch })
   const statusLabel = STATUS_OPTIONS.find((s) => s.value === kpi.status)?.label
 
   const [addingLink, setAddingLink] = useState(false)
@@ -103,7 +103,7 @@ export default function KpiCard({
   return (
     <CollapsibleCard
       defaultOpen={defaultOpen}
-      onDelete={onDelete}
+      onDelete={() => onDelete(kpi.id)}
       deleteLabel="حذف المؤشر"
       title={kpi.title || 'مؤشر جديد'}
       badges={
@@ -405,3 +405,5 @@ export default function KpiCard({
     </CollapsibleCard>
   )
 }
+
+export default memo(KpiCard)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { newKpi, newMainTask, KPI_AXES } from '../utils/calc'
 import KpiCard from './KpiCard'
 import MainTaskCard from './MainTaskCard'
@@ -25,40 +25,65 @@ export default function VisionTab({
 }) {
   const [justAddedId, setJustAddedId] = useState(null)
 
-  const financialKpis = kpis.filter((k) => k.axis === 'financial')
+  // مرجع financialKpis يبقى ثابتاً طالما لم يتغيّر id أو عنوان أي مؤشر مالي فعلياً،
+  // حتى لا تُعاد رسملة كل بطاقات المؤشرات غير المالية مع كل ضغطة مفتاح في أي مكان آخر
+  const financialKpisKey = kpis
+    .filter((k) => k.axis === 'financial')
+    .map((k) => `${k.id}:${k.title}`)
+    .join('|')
+  const financialKpis = useMemo(
+    () => kpis.filter((k) => k.axis === 'financial'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [financialKpisKey]
+  )
 
-  const updateKpi = (id, patch) => {
-    setKpis(kpis.map((k) => (k.id === id ? patch : k)))
-  }
-  const addStrategicLink = (text) => {
-    if (!strategicLinks.includes(text)) setStrategicLinks([...strategicLinks, text])
-  }
-  const removeKpi = (id) => {
-    if (!confirm('حذف هذا المؤشر؟')) return
-    setKpis(
-      kpis
-        .filter((k) => k.id !== id)
-        .map((k) => (k.linkedFinancialKpiId === id ? { ...k, linkedFinancialKpiId: '' } : k))
-    )
-  }
-  const addKpi = (axis) => {
-    const kpi = newKpi(axis)
-    setKpis([...kpis, kpi])
-    setJustAddedId(kpi.id)
-  }
+  // كل دوال التحديث ثابتة المرجع (useCallback + الشكل الوظيفي لـ setKpis/setMainTasks)
+  // وتُمرَّر كما هي (بدون لفّها بدالة جديدة لكل بطاقة) حتى يستفيد React.memo في
+  // KpiCard/MainTaskCard فعلياً ويتجنب إعادة رسملة كل البطاقات الأخرى عند الكتابة في واحدة منها
+  const updateKpi = useCallback(
+    (id, patch) => setKpis((prev) => prev.map((k) => (k.id === id ? patch : k))),
+    [setKpis]
+  )
+  const addStrategicLink = useCallback(
+    (text) => setStrategicLinks((prev) => (prev.includes(text) ? prev : [...prev, text])),
+    [setStrategicLinks]
+  )
+  const removeKpi = useCallback(
+    (id) => {
+      if (!confirm('حذف هذا المؤشر؟')) return
+      setKpis((prev) =>
+        prev
+          .filter((k) => k.id !== id)
+          .map((k) => (k.linkedFinancialKpiId === id ? { ...k, linkedFinancialKpiId: '' } : k))
+      )
+    },
+    [setKpis]
+  )
+  const addKpi = useCallback(
+    (axis) => {
+      const kpi = newKpi(axis)
+      setKpis((prev) => [...prev, kpi])
+      setJustAddedId(kpi.id)
+    },
+    [setKpis]
+  )
 
-  const updateTask = (id, patch) => {
-    setMainTasks(mainTasks.map((t) => (t.id === id ? patch : t)))
-  }
-  const removeTask = (id) => {
-    if (!confirm('حذف هذه المهمة؟')) return
-    setMainTasks(mainTasks.filter((t) => t.id !== id))
-  }
-  const addTask = () => {
+  const updateTask = useCallback(
+    (id, patch) => setMainTasks((prev) => prev.map((t) => (t.id === id ? patch : t))),
+    [setMainTasks]
+  )
+  const removeTask = useCallback(
+    (id) => {
+      if (!confirm('حذف هذه المهمة؟')) return
+      setMainTasks((prev) => prev.filter((t) => t.id !== id))
+    },
+    [setMainTasks]
+  )
+  const addTask = useCallback(() => {
     const task = newMainTask('main')
-    setMainTasks([...mainTasks, task])
+    setMainTasks((prev) => [...prev, task])
     setJustAddedId(task.id)
-  }
+  }, [setMainTasks])
 
   return (
     <>
@@ -95,8 +120,8 @@ export default function VisionTab({
               <KpiCard
                 key={kpi.id}
                 kpi={kpi}
-                onChange={(patch) => updateKpi(kpi.id, patch)}
-                onDelete={() => removeKpi(kpi.id)}
+                onChange={updateKpi}
+                onDelete={removeKpi}
                 financialKpis={financialKpis}
                 strategicLinks={strategicLinks}
                 onAddStrategicLink={addStrategicLink}
@@ -123,8 +148,8 @@ export default function VisionTab({
           <MainTaskCard
             key={task.id}
             task={task}
-            onChange={(patch) => updateTask(task.id, patch)}
-            onDelete={() => removeTask(task.id)}
+            onChange={updateTask}
+            onDelete={removeTask}
             defaultOpen={task.id === justAddedId}
           />
         ))}

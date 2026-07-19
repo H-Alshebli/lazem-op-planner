@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, PLAN_DOC_PATH } from './firebase'
 import { defaultState, normalizeOperationalPlanState, uid } from './utils/calc'
@@ -103,6 +103,44 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
 
+  // نُنشئ دوال تحديث ثابتة المرجع (عبر useCallback + الشكل الوظيفي لـ setState) بدل
+  // إعادة إنشاء دالة setXxx جديدة في كل render. بدون هذا، أي بطاقة (مؤشر/مهمة) تستخدم
+  // React.memo تفقد فائدتها لأن الدالة التي تستقبلها كـ prop تتغيّر مرجعها باستمرار،
+  // فتُعاد رسملة كل البطاقات مع كل ضغطة مفتاح — وهذا هو سبب بطء/تقطّع الكتابة.
+  const updateField = useCallback((key, updater) => {
+    setState((prev) => ({
+      ...prev,
+      [key]: typeof updater === 'function' ? updater(prev[key]) : updater,
+    }))
+  }, [])
+  const setPlan = useCallback((v) => updateField('plan', v), [updateField])
+  const setVision = useCallback((v) => updateField('vision', v), [updateField])
+  const setKpis = useCallback((v) => updateField('kpis', v), [updateField])
+  const setMainTasks = useCallback((v) => updateField('mainTasks', v), [updateField])
+  const setStrategicLinks = useCallback((v) => updateField('strategicLinks', v), [updateField])
+  const setSwot = useCallback((v) => updateField('swot', v), [updateField])
+  const setObjectives = useCallback((v) => updateField('objectives', v), [updateField])
+  const setPolicies = useCallback((v) => updateField('policies', v), [updateField])
+
+  const updateStrategyField = useCallback((key, updater) => {
+    setState((prev) => ({
+      ...prev,
+      strategy: {
+        ...prev.strategy,
+        [key]: typeof updater === 'function' ? updater(prev.strategy[key]) : updater,
+      },
+    }))
+  }, [])
+  const setStrategyVision = useCallback((v) => updateStrategyField('vision', v), [updateStrategyField])
+  const setStrategyKpis = useCallback((v) => updateStrategyField('kpis', v), [updateStrategyField])
+  const setStrategyMainTasks = useCallback((v) => updateStrategyField('mainTasks', v), [updateStrategyField])
+  const setStrategyStrategicLinks = useCallback(
+    (v) => updateStrategyField('strategicLinks', v),
+    [updateStrategyField]
+  )
+
+  const openIndicatorsDashboard = useCallback(() => setActiveTab('indicatorsDashboard'), [])
+
   if (!state) {
     return <div className="loading-screen">جارِ تحميل الخطة...</div>
   }
@@ -139,20 +177,20 @@ export default function App() {
         {activeTab === 'dashboard' && <Dashboard objectives={state.objectives} />}
 
         {activeTab === 'plan' && (
-          <PlanTab plan={state.plan} setPlan={(plan) => setState({ ...state, plan })} />
+          <PlanTab plan={state.plan} setPlan={setPlan} />
         )}
 
         {activeTab === 'vision' && (
           <VisionTab
             vision={state.vision}
-            setVision={(vision) => setState({ ...state, vision })}
+            setVision={setVision}
             kpis={state.kpis}
-            setKpis={(kpis) => setState({ ...state, kpis })}
+            setKpis={setKpis}
             mainTasks={state.mainTasks}
-            setMainTasks={(mainTasks) => setState({ ...state, mainTasks })}
+            setMainTasks={setMainTasks}
             strategicLinks={state.strategicLinks}
-            setStrategicLinks={(strategicLinks) => setState({ ...state, strategicLinks })}
-            onOpenDashboard={() => setActiveTab('indicatorsDashboard')}
+            setStrategicLinks={setStrategicLinks}
+            onOpenDashboard={openIndicatorsDashboard}
           />
         )}
 
@@ -163,32 +201,32 @@ export default function App() {
         {activeTab === 'strategy' && (
           <VisionTab
             vision={state.strategy.vision}
-            setVision={(vision) => setState({ ...state, strategy: { ...state.strategy, vision } })}
+            setVision={setStrategyVision}
             kpis={state.strategy.kpis}
-            setKpis={(kpis) => setState({ ...state, strategy: { ...state.strategy, kpis } })}
+            setKpis={setStrategyKpis}
             mainTasks={state.strategy.mainTasks}
-            setMainTasks={(mainTasks) => setState({ ...state, strategy: { ...state.strategy, mainTasks } })}
+            setMainTasks={setStrategyMainTasks}
             strategicLinks={state.strategy.strategicLinks}
-            setStrategicLinks={(strategicLinks) => setState({ ...state, strategy: { ...state.strategy, strategicLinks } })}
+            setStrategicLinks={setStrategyStrategicLinks}
             pageIntro="تُستخدم هذه الصفحة لتوثيق عناصر الاستراتيجية الخاصة بالمنظمة (رؤية، مؤشرات حسب المحاور، ومهام)، بنفس هيكل صفحة الرؤية والمؤشرات وبشكل مستقل عنها تماماً."
           />
         )}
 
         {activeTab === 'swot' && (
-          <SwotTab swot={state.swot} setSwot={(swot) => setState({ ...state, swot })} />
+          <SwotTab swot={state.swot} setSwot={setSwot} />
         )}
 
         {activeTab === 'objectives' && (
           <ObjectivesTab
             objectives={state.objectives}
-            setObjectives={(objectives) => setState({ ...state, objectives })}
+            setObjectives={setObjectives}
           />
         )}
 
         {activeTab === 'policies' && (
           <PoliciesTab
             policies={state.policies}
-            setPolicies={(policies) => setState({ ...state, policies })}
+            setPolicies={setPolicies}
           />
         )}
       </main>
