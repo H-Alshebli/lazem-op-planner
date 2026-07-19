@@ -20,6 +20,8 @@ export default function VisionTab({
   setMainTasks,
   strategicLinks,
   setStrategicLinks,
+  pageIntro = 'تُستخدم هذه الصفحة لجمع المرجعيات والمؤشرات والمهام والأفكار التي ستساعد لجنة التخطيط لاحقاً على استنباط وصياغة الأهداف التشغيلية.',
+  onOpenDashboard,
 }) {
   const [justAddedId, setJustAddedId] = useState(null)
 
@@ -60,13 +62,17 @@ export default function VisionTab({
 
   return (
     <>
-      <p className="page-intro">
-        تُستخدم هذه الصفحة لجمع المرجعيات والمؤشرات والمهام والأفكار التي ستساعد لجنة التخطيط لاحقاً على
-        استنباط وصياغة الأهداف التشغيلية.
-      </p>
+      <div className="page-intro-row">
+        <p className="page-intro">{pageIntro}</p>
+        {onOpenDashboard && (
+          <button type="button" className="primary-btn" onClick={onOpenDashboard}>
+            📊 عرض لوحة متابعة المؤشرات
+          </button>
+        )}
+      </div>
 
       <div className="card">
-        <h2><span className="n">2</span> رؤية المنظمة</h2>
+        <h2>رؤية المنظمة</h2>
         <p className="section-help">
           تمثل رؤية المنظمة المرجعية العامة التي يجب أن تتجه نحوها جميع الخطط والأهداف التشغيلية.
         </p>
@@ -106,7 +112,7 @@ export default function VisionTab({
       })}
 
       <div className="card">
-        <h2><span className="n">3</span> المهام الرئيسية / الروتينية</h2>
+        <h2>المهام الرئيسية / الروتينية</h2>
         <p className="section-help">
           تُراجع المهام الرئيسية والروتينية لاكتشاف فرص التطوير أو التبسيط أو معالجة القصور، ومن ثم استنباط
           أهداف تشغيلية منها.

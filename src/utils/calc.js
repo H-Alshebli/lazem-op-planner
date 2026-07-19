@@ -15,6 +15,37 @@ export function axisLabel(key) {
   return KPI_AXES.find((a) => a.key === key)?.label || key
 }
 
+// الأرباع السنوية والأشهر المستخدمة في فلترة لوحة متابعة المؤشرات
+export const KPI_QUARTERS = [
+  { value: 'Q1', label: 'الربع الأول' },
+  { value: 'Q2', label: 'الربع الثاني' },
+  { value: 'Q3', label: 'الربع الثالث' },
+  { value: 'Q4', label: 'الربع الرابع' },
+]
+
+export const KPI_MONTHS = [
+  { value: '1', label: 'يناير' },
+  { value: '2', label: 'فبراير' },
+  { value: '3', label: 'مارس' },
+  { value: '4', label: 'أبريل' },
+  { value: '5', label: 'مايو' },
+  { value: '6', label: 'يونيو' },
+  { value: '7', label: 'يوليو' },
+  { value: '8', label: 'أغسطس' },
+  { value: '9', label: 'سبتمبر' },
+  { value: '10', label: 'أكتوبر' },
+  { value: '11', label: 'نوفمبر' },
+  { value: '12', label: 'ديسمبر' },
+]
+
+export function quarterLabel(value) {
+  return KPI_QUARTERS.find((q) => q.value === value)?.label || ''
+}
+
+export function monthLabel(value) {
+  return KPI_MONTHS.find((m) => m.value === value)?.label || ''
+}
+
 // إنشاء مؤشر أداء جديد ضمن أحد المحاور الخمسة، بالحقول الكاملة لصفحة الرؤية والمؤشرات
 export function newKpi(axis = 'products') {
   return {
@@ -30,6 +61,9 @@ export function newKpi(axis = 'products') {
     baselineValue: '',
     targetValue: '',
     targetPeriod: '',
+    targetYear: '',
+    targetQuarter: '',
+    targetMonth: '',
     improvementDirection: '',
 
     dataSource: '',
@@ -148,6 +182,7 @@ function normalizeKpiItem(item) {
   const newKeys = [
     'axis', 'strategicObjective', 'committeeNotes', 'measurementFrequency', 'selectionRationale',
     'indicatorSource', 'brainstormItems', 'baselineValue', 'targetValue', 'targetPeriod',
+    'targetYear', 'targetQuarter', 'targetMonth',
     'improvementDirection', 'owner', 'financialReference', 'financialLineItem',
   ]
   const changed =
@@ -172,23 +207,22 @@ function normalizeMainTaskItem(item) {
   return { changed, value }
 }
 
-// يحوّل kpis وmainTasks القديمة (arrays of strings) إلى الهيكل الجديد (arrays of objects)
-// دون المساس بأي قسم آخر من بيانات الخطة. changed=true يعني أن ترحيلاً فعلياً حصل
-// ويجب حفظ النتيجة، وchanged=false يعني أن البيانات كانت أصلاً بالهيكل الجديد.
-export function normalizeOperationalPlanState(rawState) {
-  if (!rawState) return { state: rawState, changed: false }
+// يحوّل kpis/mainTasks/strategicLinks الخاصة بقسم واحد (الرؤية والمؤشرات، أو الاستراتيجية)
+// من الهيكل القديم (arrays of strings) إلى الهيكل الجديد (arrays of objects)، ويكمل أي حقول
+// ناقصة. يُستخدم لتطبيع أكثر من قسم بنفس الشكل (الرؤية والمؤشرات + الاستراتيجية) دون تكرار الكود.
+function normalizeKpisSection(kpisRaw, mainTasksRaw, strategicLinksRaw) {
   let changed = false
 
-  const rawKpis = Array.isArray(rawState.kpis) ? rawState.kpis : []
-  if (!Array.isArray(rawState.kpis)) changed = true
+  const rawKpis = Array.isArray(kpisRaw) ? kpisRaw : []
+  if (!Array.isArray(kpisRaw)) changed = true
   const kpis = rawKpis.map((item) => {
     const r = normalizeKpiItem(item)
     if (r.changed) changed = true
     return r.value
   })
 
-  const rawMainTasks = Array.isArray(rawState.mainTasks) ? rawState.mainTasks : []
-  if (!Array.isArray(rawState.mainTasks)) changed = true
+  const rawMainTasks = Array.isArray(mainTasksRaw) ? mainTasksRaw : []
+  if (!Array.isArray(mainTasksRaw)) changed = true
   const mainTasks = rawMainTasks.map((item) => {
     const r = normalizeMainTaskItem(item)
     if (r.changed) changed = true
@@ -197,13 +231,45 @@ export function normalizeOperationalPlanState(rawState) {
 
   // قائمة الأهداف/التوجهات الاستراتيجية المشتركة تُبنى من أي قيم strategicObjective
   // سبق إدخالها يدوياً في المؤشرات، بالإضافة لأي قائمة محفوظة مسبقاً
-  const existingLinks = Array.isArray(rawState.strategicLinks) ? rawState.strategicLinks : []
-  if (!Array.isArray(rawState.strategicLinks)) changed = true
+  const existingLinks = Array.isArray(strategicLinksRaw) ? strategicLinksRaw : []
+  if (!Array.isArray(strategicLinksRaw)) changed = true
   const derivedLinks = kpis.map((k) => k.strategicObjective).filter(Boolean)
   const strategicLinks = Array.from(new Set([...existingLinks, ...derivedLinks]))
   if (strategicLinks.length !== existingLinks.length) changed = true
 
-  return { state: { ...rawState, kpis, mainTasks, strategicLinks }, changed }
+  return { kpis, mainTasks, strategicLinks, changed }
+}
+
+// يحوّل بيانات صفحة الرؤية والمؤشرات (القسم الرئيسي) وقسم الاستراتيجية المستقل معاً.
+// changed=true يعني أن ترحيلاً فعلياً حصل ويجب حفظ النتيجة، وchanged=false يعني أن
+// البيانات كانت أصلاً بالهيكل الجديد.
+export function normalizeOperationalPlanState(rawState) {
+  if (!rawState) return { state: rawState, changed: false }
+  let changed = false
+
+  const top = normalizeKpisSection(rawState.kpis, rawState.mainTasks, rawState.strategicLinks)
+  if (top.changed) changed = true
+
+  const rawStrategy = rawState.strategy || {}
+  const strategySection = normalizeKpisSection(rawStrategy.kpis, rawStrategy.mainTasks, rawStrategy.strategicLinks)
+  const strategyVision = typeof rawStrategy.vision === 'string' ? rawStrategy.vision : ''
+  if (strategySection.changed || !rawState.strategy || typeof rawStrategy.vision !== 'string') changed = true
+
+  return {
+    state: {
+      ...rawState,
+      kpis: top.kpis,
+      mainTasks: top.mainTasks,
+      strategicLinks: top.strategicLinks,
+      strategy: {
+        vision: strategyVision,
+        kpis: strategySection.kpis,
+        mainTasks: strategySection.mainTasks,
+        strategicLinks: strategySection.strategicLinks,
+      },
+    },
+    changed,
+  }
 }
 
 export function defaultState() {
@@ -220,6 +286,12 @@ export function defaultState() {
     kpis: [],
     mainTasks: [],
     strategicLinks: [],
+    strategy: {
+      vision: '',
+      kpis: [],
+      mainTasks: [],
+      strategicLinks: [],
+    },
     swot: {
       strengths: [],
       weaknesses: [],

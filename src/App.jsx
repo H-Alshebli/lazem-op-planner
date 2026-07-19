@@ -6,17 +6,20 @@ import lazemLogo from './assets/lazem-logo-white.svg'
 import Dashboard from './components/Dashboard'
 import PlanTab from './components/PlanTab'
 import VisionTab from './components/VisionTab'
+import IndicatorsDashboardTab from './components/IndicatorsDashboardTab'
 import SwotTab from './components/SwotTab'
 import ObjectivesTab from './components/ObjectivesTab'
 import PoliciesTab from './components/PoliciesTab'
 import './App.css'
 
 const TABS = [
+  { id: 'strategy', label: 'الرؤية الاستراتيجية' },
   { id: 'plan', label: 'بيانات الخطة' },
   { id: 'vision', label: 'الرؤية والمؤشرات' },
   { id: 'swot', label: 'SWOT' },
   { id: 'objectives', label: 'الأهداف وخطط العمل' },
   { id: 'policies', label: 'السياسات' },
+  { id: 'indicatorsDashboard', label: 'لوحة متابعة المؤشرات' },
   { id: 'dashboard', label: 'لوحة المتابعة' },
 ]
 
@@ -133,7 +136,7 @@ export default function App() {
       </nav>
 
       <main>
-        {activeTab === 'dashboard' && <Dashboard objectives={state.objectives} kpis={state.kpis} />}
+        {activeTab === 'dashboard' && <Dashboard objectives={state.objectives} />}
 
         {activeTab === 'plan' && (
           <PlanTab plan={state.plan} setPlan={(plan) => setState({ ...state, plan })} />
@@ -149,6 +152,25 @@ export default function App() {
             setMainTasks={(mainTasks) => setState({ ...state, mainTasks })}
             strategicLinks={state.strategicLinks}
             setStrategicLinks={(strategicLinks) => setState({ ...state, strategicLinks })}
+            onOpenDashboard={() => setActiveTab('indicatorsDashboard')}
+          />
+        )}
+
+        {activeTab === 'indicatorsDashboard' && (
+          <IndicatorsDashboardTab kpis={state.kpis} />
+        )}
+
+        {activeTab === 'strategy' && (
+          <VisionTab
+            vision={state.strategy.vision}
+            setVision={(vision) => setState({ ...state, strategy: { ...state.strategy, vision } })}
+            kpis={state.strategy.kpis}
+            setKpis={(kpis) => setState({ ...state, strategy: { ...state.strategy, kpis } })}
+            mainTasks={state.strategy.mainTasks}
+            setMainTasks={(mainTasks) => setState({ ...state, strategy: { ...state.strategy, mainTasks } })}
+            strategicLinks={state.strategy.strategicLinks}
+            setStrategicLinks={(strategicLinks) => setState({ ...state, strategy: { ...state.strategy, strategicLinks } })}
+            pageIntro="تُستخدم هذه الصفحة لتوثيق عناصر الاستراتيجية الخاصة بالمنظمة (رؤية، مؤشرات حسب المحاور، ومهام)، بنفس هيكل صفحة الرؤية والمؤشرات وبشكل مستقل عنها تماماً."
           />
         )}
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import CollapsibleCard from './CollapsibleCard'
 import BrainstormItemsList from './BrainstormItemsList'
-import { axisLabel } from '../utils/calc'
+import { axisLabel, KPI_QUARTERS, KPI_MONTHS } from '../utils/calc'
 
 const UNIT_OPTIONS = ['ريال سعودي', 'نسبة مئوية', 'عدد', 'يوم', 'ساعة', 'معدل', 'درجة', 'أخرى']
 
@@ -228,13 +228,43 @@ export default function KpiCard({
         </div>
 
         <div className="field">
-          <label>فترة أو تاريخ المستهدف</label>
+          <label>وصف الفترة المستهدفة (اختياري)</label>
           <input
             type="text"
-            placeholder="مثال: 31 ديسمبر 2026، أو نهاية الربع الثالث 2026"
+            placeholder="مثال: نهاية الربع الثالث، أو بحلول إغلاق السنة المالية"
             value={kpi.targetPeriod}
             onChange={(e) => set({ targetPeriod: e.target.value })}
           />
+        </div>
+
+        <div className="field">
+          <label>السنة المستهدفة</label>
+          <input
+            type="number"
+            placeholder="مثال: 2026"
+            value={kpi.targetYear}
+            onChange={(e) => set({ targetYear: e.target.value })}
+          />
+        </div>
+
+        <div className="field">
+          <label>الربع السنوي المستهدف</label>
+          <select value={kpi.targetQuarter} onChange={(e) => set({ targetQuarter: e.target.value })}>
+            <option value="">غير محدد</option>
+            {KPI_QUARTERS.map((q) => (
+              <option key={q.value} value={q.value}>{q.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="field">
+          <label>الشهر المستهدف</label>
+          <select value={kpi.targetMonth} onChange={(e) => set({ targetMonth: e.target.value })}>
+            <option value="">غير محدد</option>
+            {KPI_MONTHS.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
         </div>
 
         <div className="field">
