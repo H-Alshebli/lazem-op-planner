@@ -46,6 +46,9 @@ export default function ObjectivesTab({ objectives, setObjectives }) {
 
       {objectives.map((obj) => {
         const { pct, status } = computeObjective(obj)
+        const target = obj.target || ''
+        const indicator = obj.indicator || ''
+        const deadline = obj.deadline || ''
         return (
           <div className="card" style={{ background: '#FBFDFD' }} key={obj.id}>
             <div className="obj-top">
@@ -58,6 +61,11 @@ export default function ObjectivesTab({ objectives, setObjectives }) {
                 <span className={`badge ${status}`}>{statusLabel(status)} · {pct}%</span>
                 <button className="del-obj" onClick={() => removeObjective(obj.id)}>حذف الهدف ✕</button>
               </div>
+            </div>
+            <div className="grid3" style={{ marginBottom: 12 }}>
+              <div className="field"><label>مؤشر قياس الهدف</label><input value={indicator} placeholder="مثال: عدد المشاريع التي بدأت تشغيل HCAD" onChange={(e) => updateObjective(obj.id, { indicator: e.target.value })} /></div>
+              <div className="field"><label>القيمة المستهدفة</label><input value={target} placeholder="مثال: 5 مشاريع" onChange={(e) => updateObjective(obj.id, { target: e.target.value })} /></div>
+              <div className="field"><label>الموعد النهائي للهدف</label><input type="date" value={deadline} onChange={(e) => updateObjective(obj.id, { deadline: e.target.value })} /></div>
             </div>
             <div className="progress-bar" style={{ marginBottom: 14 }}>
               <div style={{ width: `${pct}%` }} />

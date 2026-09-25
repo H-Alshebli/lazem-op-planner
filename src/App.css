@@ -36,7 +36,7 @@ nav button{background:transparent;border:1px solid transparent;color:var(--gray5
   font-family:inherit;transition:.15s}
 nav button:hover{background:var(--blue-gray-light);color:var(--teal)}
 nav button.active{background:var(--teal);color:var(--white)}
-main{padding:24px 28px 60px;max-width:1600px;margin:0 auto}
+main{padding:24px 28px 60px;max-width:1180px;margin:0 auto}
 .card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);
   padding:20px 22px;margin-bottom:18px}
 .card h2{font-size:15px;margin:0 0 14px;color:var(--teal);display:flex;align-items:center;gap:8px}
@@ -114,9 +114,7 @@ td input, td select{padding:6px 8px;font-size:12.5px}
 
 /* صفحة الرؤية والمؤشرات */
 .page-intro{font-size:12.5px;color:var(--teal);background:var(--blue-gray-light);
-  border-radius:var(--radius);padding:12px 16px;line-height:1.6}
-.page-intro-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
-.page-intro-row .page-intro{flex:1;min-width:240px;margin-bottom:0}
+  border-radius:var(--radius);padding:12px 16px;margin-bottom:18px;line-height:1.6}
 .section-help{font-size:12px;color:var(--gray50);margin:-6px 0 14px;line-height:1.6}
 .indicators-section{margin-bottom:18px}
 
@@ -130,44 +128,58 @@ td input, td select{padding:6px 8px;font-size:12.5px}
 .indicator-badges{display:flex;gap:6px;flex-wrap:wrap}
 .indicator-badge{font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;
   white-space:nowrap;background:var(--blue-gray-light);color:var(--teal)}
+.badge-financial{background:var(--ok-bg);color:var(--ok)}
+.badge-nonfinancial{background:#E7EEF0;color:var(--teal)}
 .badge-main{background:var(--ok-bg);color:var(--ok)}
 .badge-routine{background:var(--warn-bg);color:var(--warn)}
+.badge-category{background:#EFE7F3;color:#6A4A82}
 .status-badge{background:#EEE;color:var(--gray50)}
-.axis-products{background:#E9F3EA;color:#3E7C4A}
-.axis-hr{background:#F3E9F3;color:#7A4A82}
-.axis-financial{background:var(--ok-bg);color:var(--ok)}
-.axis-tech{background:#E7EEF7;color:#2F5FA3}
-.axis-customers{background:var(--warn-bg);color:var(--warn)}
 .card-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
 .toggle-btn{font-size:10px}
 .indicator-body{padding:2px 14px 16px;border-top:1px solid var(--border)}
 .indicator-grid{margin-top:14px;margin-bottom:4px}
-.field-span2{grid-column:1 / -1}
-.field-help{font-size:11.5px;color:var(--gray50);margin:-2px 0 6px;line-height:1.5}
-.value-badge{background:#EAF3EE;color:var(--ok)}
-
-.kpi-subsection-title{font-size:12px;font-weight:700;color:var(--teal);text-transform:uppercase;
-  letter-spacing:.3px;margin:18px 0 2px;padding-top:14px;border-top:1px solid var(--border)}
-.kpi-subsection-title-first{margin-top:14px;padding-top:0;border-top:none}
-
-.brainstorm-list{margin-top:10px;margin-bottom:14px}
-.brainstorm-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
-.brainstorm-row select{width:150px;flex-shrink:0}
-.brainstorm-row input{flex:1}
 
 .dynamic-points-list{margin-bottom:14px}
 .dynamic-point-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
 .dynamic-point-row input{flex:1}
 
-.kpi-axis-summary{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
-.kpi-axis-summary:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
-.kpi-axis-summary-head{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
-.kpi-axis-count{font-size:12px;color:var(--gray50);font-weight:600}
-.kpi-axis-status-counts{display:flex;gap:6px;flex-wrap:wrap;margin-inline-start:auto}
-
 @media (max-width:800px){
   .grid2,.grid3,.swot-grid,.stat-row{grid-template-columns:1fr}
   .indicator-header{flex-wrap:wrap}
-  .brainstorm-row{flex-wrap:wrap}
-  .brainstorm-row select{width:100%}
 }
+
+/* زر التصدير وتنسيق نسخة التسليم */
+.header-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.export-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;background:#fff;color:var(--teal);border:1px solid #fff;border-radius:9px;padding:10px 16px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px #102b3440;transition:transform .15s,background .15s}
+.export-button:hover{background:#eaf3f4;transform:translateY(-1px)}
+.export-button:focus-visible{outline:3px solid #9de0de;outline-offset:3px}
+.export-button svg{width:18px;height:18px;flex:none}
+.print-report{display:none}
+@media print{
+  @page{size:A4;margin:15mm 14mm}
+  html,body{background:#fff!important;color:#263940!important;direction:rtl}
+  body>div>header,body>div>nav,body>div>main{display:none!important}
+  .print-report{display:block!important;font-family:Tahoma,Arial,sans-serif;font-size:10pt;line-height:1.65;color:#263940}
+  .print-report *{box-sizing:border-box}
+  .print-report .report-cover{height:245mm;display:flex;flex-direction:column;justify-content:center;text-align:center;border-top:10px solid #274c5a;break-after:page}
+  .print-report .report-brand{font-size:22pt;color:#274c5a;font-weight:800;letter-spacing:2px}
+  .print-report .report-brand span{font-size:13pt;letter-spacing:0}
+  .print-report .report-kicker{color:#657b83;margin-top:38px}
+  .print-report h1{font-size:30pt;color:#274c5a;margin:12px 0}
+  .print-report .report-dept{font-size:15pt;font-weight:700}
+  .print-report .report-cover-foot{margin-top:75px;font-size:9pt;line-height:2;overflow-wrap:anywhere}
+  .print-report section{margin:0 0 19mm}
+  .print-report h2{font-size:15pt;color:#274c5a;border-bottom:2px solid #86a7b2;padding-bottom:6px;margin:0 0 12px;break-after:avoid}
+  .print-report h3{font-size:11pt;color:#274c5a;margin:16px 0 6px;break-after:avoid}
+  .print-report h3 small{font-size:9pt;color:#617780;font-weight:normal;margin-right:8px}
+  .print-report p{margin:5px 0 10px}
+  .print-report table{width:100%;border-collapse:collapse;table-layout:fixed;margin:7px 0 14px}
+  .print-report th,.print-report td{border:1px solid #ccd9dc;padding:6px 7px;text-align:right;vertical-align:top;overflow-wrap:anywhere}
+  .print-report thead th,.print-report tfoot th{background:#e8f0f2;color:#274c5a}
+  .print-report thead{display:table-header-group}
+  .print-report tr,.print-report li,.print-report .report-objective,.print-report .report-month{break-inside:avoid}
+  .print-report ul{padding-right:20px}
+  .print-report .report-multiline{white-space:pre-wrap}
+  .print-report .report-note{font-size:9pt;color:#617780}
+}
+@media(max-width:600px){.header-actions{width:100%;justify-content:space-between}.export-button{flex:1}}

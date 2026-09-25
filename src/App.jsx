@@ -1,25 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore'
 import { db, PLAN_DOC_PATH } from './firebase'
-import { defaultState, normalizeOperationalPlanState, uid } from './utils/calc'
+import { defaultState, normalizeOperationalPlanState } from './utils/calc'
 import lazemLogo from './assets/lazem-logo-white.svg'
 import Dashboard from './components/Dashboard'
 import PlanTab from './components/PlanTab'
 import VisionTab from './components/VisionTab'
-import IndicatorsDashboardTab from './components/IndicatorsDashboardTab'
 import SwotTab from './components/SwotTab'
 import ObjectivesTab from './components/ObjectivesTab'
 import PoliciesTab from './components/PoliciesTab'
+import PlanningSummary from './components/PlanningSummary'
+import PrintableReport from './components/PrintableReport'
 import './App.css'
 
 const TABS = [
-  { id: 'strategy', label: 'الرؤية الاستراتيجية' },
   { id: 'plan', label: 'بيانات الخطة' },
   { id: 'vision', label: 'الرؤية والمؤشرات' },
   { id: 'swot', label: 'SWOT' },
   { id: 'objectives', label: 'الأهداف وخطط العمل' },
+  { id: 'schedule', label: 'البرنامج الزمني والموازنة' },
   { id: 'policies', label: 'السياسات' },
-  { id: 'indicatorsDashboard', label: 'لوحة متابعة المؤشرات' },
   { id: 'dashboard', label: 'لوحة المتابعة' },
 ]
 
@@ -31,11 +31,7 @@ export default function App() {
   const [saving, setSaving] = useState(false)
   const [ready, setReady] = useState(false)
   const saveTimer = useRef(null)
-  // معرّفات كتابات محلية لا تزال بانتظار "صداها" من Firestore. نستخدم مجموعة
-  // (Set) بدل علامة واحدة (boolean) لأن أكثر من كتابة محلية قد تكون معلّقة
-  // بنفس الوقت (مثلاً تعديل حقل ثم حذف بطاقة بسرعة) — علامة واحدة تفقد
-  // تتبّع الكتابات الإضافية وتؤدي لتراجع تعديلات حديثة (كحذف لا "يثبت").
-  const pendingWriteIds = useRef(new Set())
+  const skipNextSnapshot = useRef(false)
   const isRemoteUpdate = useRef(false)
 
   // الاشتراك اللحظي في وثيقة الخطة على Firestore
@@ -43,10 +39,8 @@ export default function App() {
     const unsub = onSnapshot(
       docRef,
       (snap) => {
-        const incomingWriteId = snap.data()?.writeId
-        if (incomingWriteId && pendingWriteIds.current.has(incomingWriteId)) {
-          // هذا صدى كتابة محلية سبق أن أرسلناها لهذا الجهاز تحديداً — تجاهله
-          pendingWriteIds.current.delete(incomingWriteId)
+        if (skipNextSnapshot.current) {
+          skipNextSnapshot.current = false
           setReady(true)
           return
         }
@@ -62,9 +56,7 @@ export default function App() {
           isRemoteUpdate.current = true
           const seed = defaultState()
           setState(seed)
-          const writeId = uid()
-          pendingWriteIds.current.add(writeId)
-          setDoc(docRef, { data: seed, writeId, updatedAt: serverTimestamp() })
+          setDoc(docRef, { data: seed, updatedAt: serverTimestamp() })
         }
         setReady(true)
       },
@@ -88,13 +80,11 @@ export default function App() {
     setSaving(true)
     clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
-      const writeId = uid()
       try {
-        pendingWriteIds.current.add(writeId)
-        await setDoc(docRef, { data: state, writeId, updatedAt: serverTimestamp() })
+        skipNextSnapshot.current = true
+        await setDoc(docRef, { data: state, updatedAt: serverTimestamp() })
       } catch (e) {
         console.error('Save failed:', e)
-        pendingWriteIds.current.delete(writeId)
       } finally {
         setSaving(false)
       }
@@ -102,44 +92,6 @@ export default function App() {
     return () => clearTimeout(saveTimer.current)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state])
-
-  // نُنشئ دوال تحديث ثابتة المرجع (عبر useCallback + الشكل الوظيفي لـ setState) بدل
-  // إعادة إنشاء دالة setXxx جديدة في كل render. بدون هذا، أي بطاقة (مؤشر/مهمة) تستخدم
-  // React.memo تفقد فائدتها لأن الدالة التي تستقبلها كـ prop تتغيّر مرجعها باستمرار،
-  // فتُعاد رسملة كل البطاقات مع كل ضغطة مفتاح — وهذا هو سبب بطء/تقطّع الكتابة.
-  const updateField = useCallback((key, updater) => {
-    setState((prev) => ({
-      ...prev,
-      [key]: typeof updater === 'function' ? updater(prev[key]) : updater,
-    }))
-  }, [])
-  const setPlan = useCallback((v) => updateField('plan', v), [updateField])
-  const setVision = useCallback((v) => updateField('vision', v), [updateField])
-  const setKpis = useCallback((v) => updateField('kpis', v), [updateField])
-  const setMainTasks = useCallback((v) => updateField('mainTasks', v), [updateField])
-  const setStrategicLinks = useCallback((v) => updateField('strategicLinks', v), [updateField])
-  const setSwot = useCallback((v) => updateField('swot', v), [updateField])
-  const setObjectives = useCallback((v) => updateField('objectives', v), [updateField])
-  const setPolicies = useCallback((v) => updateField('policies', v), [updateField])
-
-  const updateStrategyField = useCallback((key, updater) => {
-    setState((prev) => ({
-      ...prev,
-      strategy: {
-        ...prev.strategy,
-        [key]: typeof updater === 'function' ? updater(prev.strategy[key]) : updater,
-      },
-    }))
-  }, [])
-  const setStrategyVision = useCallback((v) => updateStrategyField('vision', v), [updateStrategyField])
-  const setStrategyKpis = useCallback((v) => updateStrategyField('kpis', v), [updateStrategyField])
-  const setStrategyMainTasks = useCallback((v) => updateStrategyField('mainTasks', v), [updateStrategyField])
-  const setStrategyStrategicLinks = useCallback(
-    (v) => updateStrategyField('strategicLinks', v),
-    [updateStrategyField]
-  )
-
-  const openIndicatorsDashboard = useCallback(() => setActiveTab('indicatorsDashboard'), [])
 
   if (!state) {
     return <div className="loading-screen">جارِ تحميل الخطة...</div>
@@ -155,9 +107,15 @@ export default function App() {
             <div className="sub">التخطيط التشغيلي 2026</div>
           </div>
         </div>
-        <div className="sync-status">
-          <span className={`sync-dot ${saving ? 'saving' : ''}`} />
-          {saving ? 'جارِ الحفظ...' : 'محفوظ في السحابة'}
+        <div className="header-actions">
+          <div className="sync-status">
+            <span className={`sync-dot ${saving ? 'saving' : ''}`} />
+            {saving ? 'جارِ الحفظ...' : 'محفوظ في السحابة'}
+          </div>
+          <button className="export-button" type="button" onClick={() => window.print()} aria-label="حفظ الخطة بصيغة PDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 16v4h16v-4" /></svg>
+            <span>تحميل الخطة PDF</span>
+          </button>
         </div>
       </header>
 
@@ -177,59 +135,41 @@ export default function App() {
         {activeTab === 'dashboard' && <Dashboard objectives={state.objectives} />}
 
         {activeTab === 'plan' && (
-          <PlanTab plan={state.plan} setPlan={setPlan} />
+          <PlanTab plan={state.plan} setPlan={(plan) => setState({ ...state, plan })} />
         )}
 
         {activeTab === 'vision' && (
           <VisionTab
             vision={state.vision}
-            setVision={setVision}
+            setVision={(vision) => setState({ ...state, vision })}
             kpis={state.kpis}
-            setKpis={setKpis}
+            setKpis={(kpis) => setState({ ...state, kpis })}
             mainTasks={state.mainTasks}
-            setMainTasks={setMainTasks}
-            strategicLinks={state.strategicLinks}
-            setStrategicLinks={setStrategicLinks}
-            onOpenDashboard={openIndicatorsDashboard}
-          />
-        )}
-
-        {activeTab === 'indicatorsDashboard' && (
-          <IndicatorsDashboardTab kpis={state.kpis} />
-        )}
-
-        {activeTab === 'strategy' && (
-          <VisionTab
-            vision={state.strategy.vision}
-            setVision={setStrategyVision}
-            kpis={state.strategy.kpis}
-            setKpis={setStrategyKpis}
-            mainTasks={state.strategy.mainTasks}
-            setMainTasks={setStrategyMainTasks}
-            strategicLinks={state.strategy.strategicLinks}
-            setStrategicLinks={setStrategyStrategicLinks}
-            pageIntro="تُستخدم هذه الصفحة لتوثيق عناصر الاستراتيجية الخاصة بالمنظمة (رؤية، مؤشرات حسب المحاور، ومهام)، بنفس هيكل صفحة الرؤية والمؤشرات وبشكل مستقل عنها تماماً."
+            setMainTasks={(mainTasks) => setState({ ...state, mainTasks })}
           />
         )}
 
         {activeTab === 'swot' && (
-          <SwotTab swot={state.swot} setSwot={setSwot} />
+          <SwotTab swot={state.swot} setSwot={(swot) => setState({ ...state, swot })} />
         )}
 
         {activeTab === 'objectives' && (
           <ObjectivesTab
             objectives={state.objectives}
-            setObjectives={setObjectives}
+            setObjectives={(objectives) => setState({ ...state, objectives })}
           />
         )}
+
+        {activeTab === 'schedule' && <PlanningSummary plan={state.plan} objectives={state.objectives} />}
 
         {activeTab === 'policies' && (
           <PoliciesTab
             policies={state.policies}
-            setPolicies={setPolicies}
+            setPolicies={(policies) => setState({ ...state, policies })}
           />
         )}
       </main>
+      <PrintableReport state={state} />
     </>
   )
 }
