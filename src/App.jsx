@@ -141,11 +141,22 @@ export default function App() {
         {activeTab === 'vision' && (
           <VisionTab
             vision={state.vision}
-            setVision={(vision) => setState({ ...state, vision })}
+            setVision={(vision) => setState((prev) => ({ ...prev, vision }))}
             kpis={state.kpis}
-            setKpis={(kpis) => setState({ ...state, kpis })}
+            setKpis={(update) => setState((prev) => ({
+              ...prev,
+              kpis: typeof update === 'function' ? update(prev.kpis) : update,
+            }))}
             mainTasks={state.mainTasks}
-            setMainTasks={(mainTasks) => setState({ ...state, mainTasks })}
+            setMainTasks={(update) => setState((prev) => ({
+              ...prev,
+              mainTasks: typeof update === 'function' ? update(prev.mainTasks) : update,
+            }))}
+            strategicLinks={state.strategicLinks || []}
+            setStrategicLinks={(update) => setState((prev) => ({
+              ...prev,
+              strategicLinks: typeof update === 'function' ? update(prev.strategicLinks || []) : update,
+            }))}
           />
         )}
 
