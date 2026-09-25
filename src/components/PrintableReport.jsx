@@ -1,7 +1,11 @@
 import { computeObjective } from '../utils/calc'
 
 const fmt = (n) => new Intl.NumberFormat('ar-SA', { maximumFractionDigits: 2 }).format(Number(n) || 0)
-const items = (values) => (values || []).filter(Boolean).join('، ') || '—'
+const items = (values) => {
+  if (Array.isArray(values)) return values.filter(Boolean).join('، ') || '—'
+  if (typeof values === 'string') return values.trim() || '—'
+  return '—'
+}
 
 export default function PrintableReport({ state }) {
   const { plan, vision, kpis = [], mainTasks = [], swot = {}, objectives = [], policies } = state
